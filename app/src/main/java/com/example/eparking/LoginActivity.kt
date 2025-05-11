@@ -3,14 +3,29 @@ package com.example.eparking
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
+import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import android.util.Base64
+import javax.crypto.Cipher
+import javax.crypto.SecretKeyFactory
+import javax.crypto.spec.PBEKeySpec
+import javax.crypto.spec.SecretKeySpec
 
 class LoginActivity : AppCompatActivity() {
     private lateinit var authManager: AuthManager
     private lateinit var usernameInput: EditText
     private lateinit var passwordInput: EditText
+    private lateinit var rememberMeCheckbox: CheckBox
+
+    companion object {
+        private const val PREFS_NAME = "LoginPrefs"
+        private const val KEY_REMEMBER_ME = "rememberMe"
+        private const val KEY_SAVED_USERNAME = "savedUsername"
+        private const val KEY_SAVED_PASSWORD = "savedPassword"
+        private const val ENCRYPTION_KEY = "YourSecretKey123" // In production, use a more secure key
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,6 +42,10 @@ class LoginActivity : AppCompatActivity() {
 
         usernameInput = findViewById(R.id.usernameInput)
         passwordInput = findViewById(R.id.passwordInput)
+        rememberMeCheckbox = findViewById(R.id.rememberMeCheckbox)
+
+        // Check for saved credentials
+        checkSavedCredentials()
 
         findViewById<Button>(R.id.loginButton).setOnClickListener {
             val username = usernameInput.text.toString()
@@ -38,15 +57,72 @@ class LoginActivity : AppCompatActivity() {
             }
 
             if (authManager.login(username, password)) {
+                // Handle remember me
+                handleRememberMe(username, password)
+                
+                Toast.makeText(this, "Login successful", Toast.LENGTH_SHORT).show()
                 startActivity(Intent(this, MainActivity::class.java))
                 finish()
             } else {
-                Toast.makeText(this, "Invalid credentials", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Invalid username or password", Toast.LENGTH_SHORT).show()
             }
         }
 
         findViewById<Button>(R.id.registerButton).setOnClickListener {
             startActivity(Intent(this, RegisterActivity::class.java))
         }
+    }
+
+    private fun checkSavedCredentials() {
+        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        val rememberMe = prefs.getBoolean(KEY_REMEMBER_ME, false)
+
+        if (rememberMe) {
+            val savedUsername = prefs.getString(KEY_SAVED_USERNAME, null)
+            val savedPassword = prefs.getString(KEY_SAVED_PASSWORD, null)
+
+            if (savedUsername != null && savedPassword != null) {
+                usernameInput.setText(savedUsername)
+                passwordInput.setText(decryptPassword(savedPassword))
+                rememberMeCheckbox.isChecked = true
+            }
+        }
+    }
+
+    private fun handleRememberMe(username: String, password: String) {
+        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        val editor = prefs.edit()
+
+        if (rememberMeCheckbox.isChecked) {
+            editor.putBoolean(KEY_REMEMBER_ME, true)
+            editor.putString(KEY_SAVED_USERNAME, username)
+            editor.putString(KEY_SAVED_PASSWORD, encryptPassword(password))
+        } else {
+            editor.clear()
+        }
+        editor.apply()
+    }
+
+    private fun encryptPassword(password: String): String {
+        val key = generateKey()
+        val cipher = Cipher.getInstance("AES")
+        cipher.init(Cipher.ENCRYPT_MODE, key)
+        val encryptedBytes = cipher.doFinal(password.toByteArray())
+        return Base64.encodeToString(encryptedBytes, Base64.DEFAULT)
+    }
+
+    private fun decryptPassword(encryptedPassword: String): String {
+        val key = generateKey()
+        val cipher = Cipher.getInstance("AES")
+        cipher.init(Cipher.DECRYPT_MODE, key)
+        val decryptedBytes = cipher.doFinal(Base64.decode(encryptedPassword, Base64.DEFAULT))
+        return String(decryptedBytes)
+    }
+
+    private fun generateKey(): SecretKeySpec {
+        val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1")
+        val spec = PBEKeySpec(ENCRYPTION_KEY.toCharArray(), "salt".toByteArray(), 65536, 128)
+        val tmp = factory.generateSecret(spec)
+        return SecretKeySpec(tmp.encoded, "AES")
     }
 } 
