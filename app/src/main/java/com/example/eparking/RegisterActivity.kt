@@ -4,9 +4,13 @@ import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.text.Editable
+import android.text.InputType
 import android.text.TextWatcher
+import android.view.animation.AlphaAnimation
+import android.view.animation.Animation
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
@@ -20,6 +24,10 @@ class RegisterActivity : AppCompatActivity() {
     private lateinit var confirmPasswordInput: EditText
     private lateinit var passwordStrengthMeter: ProgressBar
     private lateinit var passwordStrengthText: TextView
+    private lateinit var passwordVisibilityToggle: ImageView
+    private lateinit var confirmPasswordVisibilityToggle: ImageView
+    private var isPasswordVisible = false
+    private var isConfirmPasswordVisible = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,6 +40,10 @@ class RegisterActivity : AppCompatActivity() {
         confirmPasswordInput = findViewById(R.id.confirmPasswordInput)
         passwordStrengthMeter = findViewById(R.id.passwordStrengthMeter)
         passwordStrengthText = findViewById(R.id.passwordStrengthText)
+        passwordVisibilityToggle = findViewById(R.id.passwordVisibilityToggle)
+        confirmPasswordVisibilityToggle = findViewById(R.id.confirmPasswordVisibilityToggle)
+
+        setupPasswordVisibilityToggles()
 
         // Set up password strength monitoring
         passwordInput.addTextChangedListener(object : TextWatcher {
@@ -101,6 +113,62 @@ class RegisterActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    private fun setupPasswordVisibilityToggles() {
+        passwordVisibilityToggle.setOnClickListener {
+            togglePasswordVisibility(passwordInput, passwordVisibilityToggle, isPasswordVisible) { visible ->
+                isPasswordVisible = visible
+            }
+        }
+
+        confirmPasswordVisibilityToggle.setOnClickListener {
+            togglePasswordVisibility(confirmPasswordInput, confirmPasswordVisibilityToggle, isConfirmPasswordVisible) { visible ->
+                isConfirmPasswordVisible = visible
+            }
+        }
+    }
+
+    private fun togglePasswordVisibility(
+        editText: EditText,
+        toggle: ImageView,
+        isVisible: Boolean,
+        onVisibilityChanged: (Boolean) -> Unit
+    ) {
+        val newVisibility = !isVisible
+        
+        // Toggle password visibility
+        val inputType = if (newVisibility) {
+            InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+        } else {
+            InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }
+        
+        // Save cursor position
+        val cursorPosition = editText.selectionStart
+        
+        // Update input type
+        editText.inputType = inputType
+        
+        // Restore cursor position
+        editText.setSelection(cursorPosition)
+        
+        // Animate the icon
+        val fadeOut = AlphaAnimation(1f, 0.3f)
+        fadeOut.duration = 100
+        val fadeIn = AlphaAnimation(0.3f, 1f)
+        fadeIn.duration = 100
+        
+        fadeOut.setAnimationListener(object : Animation.AnimationListener {
+            override fun onAnimationStart(animation: Animation?) {}
+            override fun onAnimationRepeat(animation: Animation?) {}
+            override fun onAnimationEnd(animation: Animation?) {
+                toggle.startAnimation(fadeIn)
+            }
+        })
+        
+        toggle.startAnimation(fadeOut)
+        onVisibilityChanged(newVisibility)
     }
 
     private fun updatePasswordStrength(password: String) {

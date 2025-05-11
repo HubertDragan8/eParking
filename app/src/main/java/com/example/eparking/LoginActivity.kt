@@ -2,9 +2,13 @@ package com.example.eparking
 
 import android.content.Intent
 import android.os.Bundle
+import android.text.InputType
+import android.view.animation.AlphaAnimation
+import android.view.animation.Animation
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import android.util.Base64
@@ -18,6 +22,8 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var usernameInput: EditText
     private lateinit var passwordInput: EditText
     private lateinit var rememberMeCheckbox: CheckBox
+    private lateinit var passwordVisibilityToggle: ImageView
+    private var isPasswordVisible = false
 
     companion object {
         private const val PREFS_NAME = "LoginPrefs"
@@ -43,6 +49,9 @@ class LoginActivity : AppCompatActivity() {
         usernameInput = findViewById(R.id.usernameInput)
         passwordInput = findViewById(R.id.passwordInput)
         rememberMeCheckbox = findViewById(R.id.rememberMeCheckbox)
+        passwordVisibilityToggle = findViewById(R.id.passwordVisibilityToggle)
+
+        setupPasswordVisibilityToggle()
 
         // Check for saved credentials
         checkSavedCredentials()
@@ -71,6 +80,48 @@ class LoginActivity : AppCompatActivity() {
         findViewById<Button>(R.id.registerButton).setOnClickListener {
             startActivity(Intent(this, RegisterActivity::class.java))
         }
+    }
+
+    private fun setupPasswordVisibilityToggle() {
+        passwordVisibilityToggle.setOnClickListener {
+            togglePasswordVisibility()
+        }
+    }
+
+    private fun togglePasswordVisibility() {
+        isPasswordVisible = !isPasswordVisible
+        
+        // Toggle password visibility
+        val inputType = if (isPasswordVisible) {
+            InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+        } else {
+            InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }
+        
+        // Save cursor position
+        val cursorPosition = passwordInput.selectionStart
+        
+        // Update input type
+        passwordInput.inputType = inputType
+        
+        // Restore cursor position
+        passwordInput.setSelection(cursorPosition)
+        
+        // Animate the icon
+        val fadeOut = AlphaAnimation(1f, 0.3f)
+        fadeOut.duration = 100
+        val fadeIn = AlphaAnimation(0.3f, 1f)
+        fadeIn.duration = 100
+        
+        fadeOut.setAnimationListener(object : Animation.AnimationListener {
+            override fun onAnimationStart(animation: Animation?) {}
+            override fun onAnimationRepeat(animation: Animation?) {}
+            override fun onAnimationEnd(animation: Animation?) {
+                passwordVisibilityToggle.startAnimation(fadeIn)
+            }
+        })
+        
+        passwordVisibilityToggle.startAnimation(fadeOut)
     }
 
     private fun checkSavedCredentials() {
