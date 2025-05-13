@@ -3,16 +3,13 @@ package com.example.eparking
 import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
-import android.text.InputType
 import android.text.TextWatcher
-import android.view.animation.AlphaAnimation
-import android.view.animation.Animation
 import android.widget.Button
 import android.widget.CheckBox
-import android.widget.EditText
-import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import android.util.Base64
 import javax.crypto.Cipher
 import javax.crypto.SecretKeyFactory
@@ -21,12 +18,12 @@ import javax.crypto.spec.SecretKeySpec
 
 class LoginActivity : AppCompatActivity() {
     private lateinit var authManager: AuthManager
-    private lateinit var usernameInput: EditText
-    private lateinit var passwordInput: EditText
+    private lateinit var usernameInput: TextInputEditText
+    private lateinit var passwordInput: TextInputEditText
+    private lateinit var usernameLayout: TextInputLayout
+    private lateinit var passwordLayout: TextInputLayout
     private lateinit var rememberMeCheckbox: CheckBox
-    private lateinit var passwordVisibilityToggle: ImageView
     private lateinit var loginButton: Button
-    private var isPasswordVisible = false
 
     companion object {
         private const val PREFS_NAME = "LoginPrefs"
@@ -34,6 +31,8 @@ class LoginActivity : AppCompatActivity() {
         private const val KEY_SAVED_USERNAME = "savedUsername"
         private const val KEY_SAVED_PASSWORD = "savedPassword"
         private const val ENCRYPTION_KEY = "YourSecretKey123" // In production, use a more secure key
+        private const val MAX_USERNAME_LENGTH = 40
+        private const val MAX_PASSWORD_LENGTH = 20
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -50,7 +49,6 @@ class LoginActivity : AppCompatActivity() {
         }
 
         initializeViews()
-        setupPasswordVisibilityToggle()
         setupTextWatchers()
         checkSavedCredentials()
 
@@ -84,8 +82,9 @@ class LoginActivity : AppCompatActivity() {
     private fun initializeViews() {
         usernameInput = findViewById(R.id.usernameInput)
         passwordInput = findViewById(R.id.passwordInput)
+        usernameLayout = findViewById(R.id.usernameLayout)
+        passwordLayout = findViewById(R.id.passwordLayout)
         rememberMeCheckbox = findViewById(R.id.rememberMeCheckbox)
-        passwordVisibilityToggle = findViewById(R.id.passwordVisibilityToggle)
         loginButton = findViewById(R.id.loginButton)
     }
 
@@ -107,62 +106,32 @@ class LoginActivity : AppCompatActivity() {
         val password = passwordInput.text.toString()
 
         // Clear previous errors
-        usernameInput.error = null
-        passwordInput.error = null
+        usernameLayout.error = null
+        passwordLayout.error = null
 
-        // Validate fields
+        // Validate username length
+        if (username.length > MAX_USERNAME_LENGTH) {
+            usernameLayout.error = "Username must be at most $MAX_USERNAME_LENGTH characters"
+        }
+
+        // Validate password length
+        if (password.length > MAX_PASSWORD_LENGTH) {
+            passwordLayout.error = "Password must be at most $MAX_PASSWORD_LENGTH characters"
+        }
+
+        // Validate required fields
         if (username.isEmpty()) {
-            usernameInput.error = "Username is required"
+            usernameLayout.error = "Username is required"
         }
 
         if (password.isEmpty()) {
-            passwordInput.error = "Password is required"
+            passwordLayout.error = "Password is required"
         }
 
         // Update button state
-        loginButton.isEnabled = ValidationUtils.isLoginFormValid(username, password)
-    }
-
-    private fun setupPasswordVisibilityToggle() {
-        passwordVisibilityToggle.setOnClickListener {
-            togglePasswordVisibility()
-        }
-    }
-
-    private fun togglePasswordVisibility() {
-        isPasswordVisible = !isPasswordVisible
-        
-        // Toggle password visibility
-        val inputType = if (isPasswordVisible) {
-            InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
-        } else {
-            InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-        }
-        
-        // Save cursor position
-        val cursorPosition = passwordInput.selectionStart
-        
-        // Update input type
-        passwordInput.inputType = inputType
-        
-        // Restore cursor position
-        passwordInput.setSelection(cursorPosition)
-        
-        // Animate the icon
-        val fadeOut = AlphaAnimation(1f, 0.3f)
-        fadeOut.duration = 100
-        val fadeIn = AlphaAnimation(0.3f, 1f)
-        fadeIn.duration = 100
-        
-        fadeOut.setAnimationListener(object : Animation.AnimationListener {
-            override fun onAnimationStart(animation: Animation?) {}
-            override fun onAnimationRepeat(animation: Animation?) {}
-            override fun onAnimationEnd(animation: Animation?) {
-                passwordVisibilityToggle.startAnimation(fadeIn)
-            }
-        })
-        
-        passwordVisibilityToggle.startAnimation(fadeOut)
+        loginButton.isEnabled = ValidationUtils.isLoginFormValid(username, password) &&
+                username.length <= MAX_USERNAME_LENGTH &&
+                password.length <= MAX_PASSWORD_LENGTH
     }
 
     private fun checkSavedCredentials() {

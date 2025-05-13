@@ -4,31 +4,31 @@ import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.text.Editable
-import android.text.InputType
 import android.text.TextWatcher
-import android.view.animation.AlphaAnimation
-import android.view.animation.Animation
 import android.widget.Button
-import android.widget.EditText
-import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 
 class RegisterActivity : AppCompatActivity() {
     private lateinit var authManager: AuthManager
-    private lateinit var usernameInput: EditText
-    private lateinit var passwordInput: EditText
-    private lateinit var confirmPasswordInput: EditText
+    private lateinit var usernameInput: TextInputEditText
+    private lateinit var passwordInput: TextInputEditText
+    private lateinit var confirmPasswordInput: TextInputEditText
+    private lateinit var usernameLayout: TextInputLayout
+    private lateinit var passwordLayout: TextInputLayout
+    private lateinit var confirmPasswordLayout: TextInputLayout
     private lateinit var passwordStrengthMeter: ProgressBar
     private lateinit var passwordStrengthText: TextView
-    private lateinit var passwordVisibilityToggle: ImageView
-    private lateinit var confirmPasswordVisibilityToggle: ImageView
     private lateinit var registerButton: Button
-    private var isPasswordVisible = false
-    private var isConfirmPasswordVisible = false
+
+    companion object {
+        private const val MAX_USERNAME_LENGTH = 40
+        private const val MAX_PASSWORD_LENGTH = 20
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,7 +36,6 @@ class RegisterActivity : AppCompatActivity() {
 
         authManager = AuthManager(this)
         initializeViews()
-        setupPasswordVisibilityToggles()
         setupTextWatchers()
 
         registerButton.setOnClickListener {
@@ -59,7 +58,7 @@ class RegisterActivity : AppCompatActivity() {
                     finish()
                 }
                 AuthManager.RegistrationResult.USERNAME_EXISTS -> {
-                    usernameInput.error = "Username already exists"
+                    usernameLayout.error = "Username already exists"
                 }
                 else -> {
                     Toast.makeText(this, "Registration failed", Toast.LENGTH_SHORT).show()
@@ -72,10 +71,11 @@ class RegisterActivity : AppCompatActivity() {
         usernameInput = findViewById(R.id.usernameInput)
         passwordInput = findViewById(R.id.passwordInput)
         confirmPasswordInput = findViewById(R.id.confirmPasswordInput)
+        usernameLayout = findViewById(R.id.usernameLayout)
+        passwordLayout = findViewById(R.id.passwordLayout)
+        confirmPasswordLayout = findViewById(R.id.confirmPasswordLayout)
         passwordStrengthMeter = findViewById(R.id.passwordStrengthMeter)
         passwordStrengthText = findViewById(R.id.passwordStrengthText)
-        passwordVisibilityToggle = findViewById(R.id.passwordVisibilityToggle)
-        confirmPasswordVisibilityToggle = findViewById(R.id.confirmPasswordVisibilityToggle)
         registerButton = findViewById(R.id.registerButton)
     }
 
@@ -106,83 +106,45 @@ class RegisterActivity : AppCompatActivity() {
         val confirmPassword = confirmPasswordInput.text.toString()
 
         // Clear previous errors
-        usernameInput.error = null
-        passwordInput.error = null
-        confirmPasswordInput.error = null
+        usernameLayout.error = null
+        passwordLayout.error = null
+        confirmPasswordLayout.error = null
+
+        // Validate username length
+        if (username.length > MAX_USERNAME_LENGTH) {
+            usernameLayout.error = "Username must be at most $MAX_USERNAME_LENGTH characters"
+        }
+
+        // Validate password length
+        if (password.length > MAX_PASSWORD_LENGTH) {
+            passwordLayout.error = "Password must be at most $MAX_PASSWORD_LENGTH characters"
+        }
+
+        // Validate confirm password length
+        if (confirmPassword.length > MAX_PASSWORD_LENGTH) {
+            confirmPasswordLayout.error = "Password must be at most $MAX_PASSWORD_LENGTH characters"
+        }
 
         // Validate username
         if (!ValidationUtils.isValidUsername(username)) {
-            usernameInput.error = "Username must be at least 3 characters and contain only letters and numbers"
+            usernameLayout.error = "Username must be at least 3 characters and contain only letters and numbers"
         }
 
         // Validate password
         if (!ValidationUtils.isValidPassword(password)) {
-            passwordInput.error = "Password must be at least 6 characters and contain uppercase, digit, and special character"
+            passwordLayout.error = "Password must be at least 6 characters and contain uppercase, digit, and special character"
         }
 
         // Validate confirm password
         if (!ValidationUtils.doPasswordsMatch(password, confirmPassword)) {
-            confirmPasswordInput.error = "Passwords do not match"
+            confirmPasswordLayout.error = "Passwords do not match"
         }
 
         // Update button state
-        registerButton.isEnabled = ValidationUtils.isRegisterFormValid(username, password, confirmPassword)
-    }
-
-    private fun setupPasswordVisibilityToggles() {
-        passwordVisibilityToggle.setOnClickListener {
-            togglePasswordVisibility(passwordInput, passwordVisibilityToggle, isPasswordVisible) { visible ->
-                isPasswordVisible = visible
-            }
-        }
-
-        confirmPasswordVisibilityToggle.setOnClickListener {
-            togglePasswordVisibility(confirmPasswordInput, confirmPasswordVisibilityToggle, isConfirmPasswordVisible) { visible ->
-                isConfirmPasswordVisible = visible
-            }
-        }
-    }
-
-    private fun togglePasswordVisibility(
-        editText: EditText,
-        toggle: ImageView,
-        isVisible: Boolean,
-        onVisibilityChanged: (Boolean) -> Unit
-    ) {
-        val newVisibility = !isVisible
-        
-        // Toggle password visibility
-        val inputType = if (newVisibility) {
-            InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
-        } else {
-            InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-        }
-        
-        // Save cursor position
-        val cursorPosition = editText.selectionStart
-        
-        // Update input type
-        editText.inputType = inputType
-        
-        // Restore cursor position
-        editText.setSelection(cursorPosition)
-        
-        // Animate the icon
-        val fadeOut = AlphaAnimation(1f, 0.3f)
-        fadeOut.duration = 100
-        val fadeIn = AlphaAnimation(0.3f, 1f)
-        fadeIn.duration = 100
-        
-        fadeOut.setAnimationListener(object : Animation.AnimationListener {
-            override fun onAnimationStart(animation: Animation?) {}
-            override fun onAnimationRepeat(animation: Animation?) {}
-            override fun onAnimationEnd(animation: Animation?) {
-                toggle.startAnimation(fadeIn)
-            }
-        })
-        
-        toggle.startAnimation(fadeOut)
-        onVisibilityChanged(newVisibility)
+        registerButton.isEnabled = ValidationUtils.isRegisterFormValid(username, password, confirmPassword) &&
+                username.length <= MAX_USERNAME_LENGTH &&
+                password.length <= MAX_PASSWORD_LENGTH &&
+                confirmPassword.length <= MAX_PASSWORD_LENGTH
     }
 
     private fun updatePasswordStrength(password: String) {

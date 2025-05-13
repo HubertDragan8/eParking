@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -13,40 +14,42 @@
         android:textSize="24sp"
         android:layout_marginBottom="32dp"/>
 
-    <EditText
-        android:id="@+id/usernameInput"
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/usernameLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Username"
-        android:inputType="text"
-        android:layout_marginBottom="16dp"/>
+        android:layout_marginBottom="16dp"
+        app:counterEnabled="true"
+        app:counterMaxLength="40"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
-    <RelativeLayout
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/usernameInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Username"
+            android:inputType="text"
+            android:maxLength="40"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/passwordLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp">
+        android:layout_marginBottom="8dp"
+        app:counterEnabled="true"
+        app:counterMaxLength="20"
+        app:passwordToggleEnabled="true"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
-        <EditText
+        <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/passwordInput"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Password"
             android:inputType="textPassword"
-            android:layout_alignParentStart="true"
-            android:layout_alignParentEnd="true"/>
-
-        <ImageView
-            android:id="@+id/passwordVisibilityToggle"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            android:layout_marginEnd="8dp"
-            android:src="@android:drawable/ic_menu_view"
-            android:contentDescription="Toggle password visibility"
-            android:padding="4dp"
-            android:background="?attr/selectableItemBackgroundBorderless"/>
-    </RelativeLayout>
+            android:maxLength="20"/>
+    </com.google.android.material.textfield.TextInputLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -73,39 +76,30 @@
             android:textSize="12sp"/>
     </LinearLayout>
 
-    <RelativeLayout
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/confirmPasswordLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="24dp">
+        android:layout_marginBottom="24dp"
+        app:counterEnabled="true"
+        app:counterMaxLength="20"
+        app:passwordToggleEnabled="true"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
-        <EditText
+        <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/confirmPasswordInput"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Confirm Password"
             android:inputType="textPassword"
-            android:layout_alignParentStart="true"
-            android:layout_alignParentEnd="true"/>
-
-        <ImageView
-            android:id="@+id/confirmPasswordVisibilityToggle"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            android:layout_marginEnd="8dp"
-            android:src="@android:drawable/ic_menu_view"
-            android:contentDescription="Toggle confirm password visibility"
-            android:padding="4dp"
-            android:background="?attr/selectableItemBackgroundBorderless"/>
-    </RelativeLayout>
+            android:maxLength="20"/>
+    </com.google.android.material.textfield.TextInputLayout>
 
     <Button
         android:id="@+id/registerButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Register"
-        android:enabled="false"
-        android:layout_marginBottom="16dp"/>
+        android:enabled="false"/>
 
 </LinearLayout> 
