@@ -26,6 +26,7 @@ class RegisterActivity : AppCompatActivity() {
     private lateinit var passwordStrengthText: TextView
     private lateinit var passwordVisibilityToggle: ImageView
     private lateinit var confirmPasswordVisibilityToggle: ImageView
+    private lateinit var registerButton: Button
     private var isPasswordVisible = false
     private var isConfirmPasswordVisible = false
 
@@ -34,45 +35,19 @@ class RegisterActivity : AppCompatActivity() {
         setContentView(R.layout.activity_register)
 
         authManager = AuthManager(this)
-
-        usernameInput = findViewById(R.id.usernameInput)
-        passwordInput = findViewById(R.id.passwordInput)
-        confirmPasswordInput = findViewById(R.id.confirmPasswordInput)
-        passwordStrengthMeter = findViewById(R.id.passwordStrengthMeter)
-        passwordStrengthText = findViewById(R.id.passwordStrengthText)
-        passwordVisibilityToggle = findViewById(R.id.passwordVisibilityToggle)
-        confirmPasswordVisibilityToggle = findViewById(R.id.confirmPasswordVisibilityToggle)
-
+        initializeViews()
         setupPasswordVisibilityToggles()
+        setupTextWatchers()
 
-        // Set up password strength monitoring
-        passwordInput.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: Editable?) {
-                updatePasswordStrength(s.toString())
+        registerButton.setOnClickListener {
+            if (!registerButton.isEnabled) {
+                Toast.makeText(this, "Please fill in all required fields correctly", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
             }
-        })
 
-        findViewById<Button>(R.id.registerButton).setOnClickListener {
             val username = usernameInput.text.toString()
             val password = passwordInput.text.toString()
             val confirmPassword = confirmPasswordInput.text.toString()
-
-            // Clear previous errors
-            usernameInput.error = null
-            passwordInput.error = null
-            confirmPasswordInput.error = null
-
-            if (username.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
-                Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            if (password != confirmPassword) {
-                confirmPasswordInput.error = "Passwords do not match"
-                return@setOnClickListener
-            }
 
             when (authManager.register(username, password)) {
                 AuthManager.RegistrationResult.SUCCESS -> {
@@ -80,39 +55,75 @@ class RegisterActivity : AppCompatActivity() {
                     startActivity(Intent(this, MainActivity::class.java))
                     finish()
                 }
-                AuthManager.RegistrationResult.EMPTY_USERNAME -> {
-                    usernameInput.error = "Username cannot be empty"
-                }
-                AuthManager.RegistrationResult.INVALID_PASSWORD -> {
-                    when (authManager.validatePassword(password)) {
-                        AuthManager.PasswordValidationResult.EMPTY -> {
-                            passwordInput.error = "Password cannot be empty"
-                        }
-                        AuthManager.PasswordValidationResult.TOO_SHORT -> {
-                            passwordInput.error = "Password must be at least 6 characters"
-                        }
-                        AuthManager.PasswordValidationResult.NO_UPPERCASE -> {
-                            passwordInput.error = "Password must contain at least one uppercase letter"
-                        }
-                        AuthManager.PasswordValidationResult.NO_DIGIT -> {
-                            passwordInput.error = "Password must contain at least one digit"
-                        }
-                        AuthManager.PasswordValidationResult.NO_SPECIAL_CHAR -> {
-                            passwordInput.error = "Password must contain at least one special character"
-                        }
-                        else -> {
-                            passwordInput.error = "Invalid password"
-                        }
-                    }
-                }
                 AuthManager.RegistrationResult.USERNAME_EXISTS -> {
                     usernameInput.error = "Username already exists"
                 }
-                AuthManager.RegistrationResult.ERROR -> {
+                else -> {
                     Toast.makeText(this, "Registration failed", Toast.LENGTH_SHORT).show()
                 }
             }
         }
+    }
+
+    private fun initializeViews() {
+        usernameInput = findViewById(R.id.usernameInput)
+        passwordInput = findViewById(R.id.passwordInput)
+        confirmPasswordInput = findViewById(R.id.confirmPasswordInput)
+        passwordStrengthMeter = findViewById(R.id.passwordStrengthMeter)
+        passwordStrengthText = findViewById(R.id.passwordStrengthText)
+        passwordVisibilityToggle = findViewById(R.id.passwordVisibilityToggle)
+        confirmPasswordVisibilityToggle = findViewById(R.id.confirmPasswordVisibilityToggle)
+        registerButton = findViewById(R.id.registerButton)
+    }
+
+    private fun setupTextWatchers() {
+        val textWatcher = object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                validateRegisterForm()
+            }
+        }
+
+        usernameInput.addTextChangedListener(textWatcher)
+        passwordInput.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                updatePasswordStrength(s.toString())
+                validateRegisterForm()
+            }
+        })
+        confirmPasswordInput.addTextChangedListener(textWatcher)
+    }
+
+    private fun validateRegisterForm() {
+        val username = usernameInput.text.toString()
+        val password = passwordInput.text.toString()
+        val confirmPassword = confirmPasswordInput.text.toString()
+
+        // Clear previous errors
+        usernameInput.error = null
+        passwordInput.error = null
+        confirmPasswordInput.error = null
+
+        // Validate username
+        if (!ValidationUtils.isValidUsername(username)) {
+            usernameInput.error = "Username must be at least 3 characters and contain only letters and numbers"
+        }
+
+        // Validate password
+        if (!ValidationUtils.isValidPassword(password)) {
+            passwordInput.error = "Password must be at least 6 characters and contain uppercase, digit, and special character"
+        }
+
+        // Validate confirm password
+        if (!ValidationUtils.doPasswordsMatch(password, confirmPassword)) {
+            confirmPasswordInput.error = "Passwords do not match"
+        }
+
+        // Update button state
+        registerButton.isEnabled = ValidationUtils.isRegisterFormValid(username, password, confirmPassword)
     }
 
     private fun setupPasswordVisibilityToggles() {

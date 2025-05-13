@@ -2,7 +2,9 @@ package com.example.eparking
 
 import android.content.Intent
 import android.os.Bundle
+import android.text.Editable
 import android.text.InputType
+import android.text.TextWatcher
 import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
 import android.widget.Button
@@ -23,6 +25,7 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var passwordInput: EditText
     private lateinit var rememberMeCheckbox: CheckBox
     private lateinit var passwordVisibilityToggle: ImageView
+    private lateinit var loginButton: Button
     private var isPasswordVisible = false
 
     companion object {
@@ -46,29 +49,22 @@ class LoginActivity : AppCompatActivity() {
             return
         }
 
-        usernameInput = findViewById(R.id.usernameInput)
-        passwordInput = findViewById(R.id.passwordInput)
-        rememberMeCheckbox = findViewById(R.id.rememberMeCheckbox)
-        passwordVisibilityToggle = findViewById(R.id.passwordVisibilityToggle)
-
+        initializeViews()
         setupPasswordVisibilityToggle()
-
-        // Check for saved credentials
+        setupTextWatchers()
         checkSavedCredentials()
 
-        findViewById<Button>(R.id.loginButton).setOnClickListener {
-            val username = usernameInput.text.toString()
-            val password = passwordInput.text.toString()
-
-            if (username.isEmpty() || password.isEmpty()) {
-                Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show()
+        loginButton.setOnClickListener {
+            if (!loginButton.isEnabled) {
+                Toast.makeText(this, "Please fill in all required fields correctly", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
+            val username = usernameInput.text.toString()
+            val password = passwordInput.text.toString()
+
             if (authManager.login(username, password)) {
-                // Handle remember me
                 handleRememberMe(username, password)
-                
                 Toast.makeText(this, "Login successful", Toast.LENGTH_SHORT).show()
                 startActivity(Intent(this, MainActivity::class.java))
                 finish()
@@ -80,6 +76,48 @@ class LoginActivity : AppCompatActivity() {
         findViewById<Button>(R.id.registerButton).setOnClickListener {
             startActivity(Intent(this, RegisterActivity::class.java))
         }
+    }
+
+    private fun initializeViews() {
+        usernameInput = findViewById(R.id.usernameInput)
+        passwordInput = findViewById(R.id.passwordInput)
+        rememberMeCheckbox = findViewById(R.id.rememberMeCheckbox)
+        passwordVisibilityToggle = findViewById(R.id.passwordVisibilityToggle)
+        loginButton = findViewById(R.id.loginButton)
+    }
+
+    private fun setupTextWatchers() {
+        val textWatcher = object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                validateLoginForm()
+            }
+        }
+
+        usernameInput.addTextChangedListener(textWatcher)
+        passwordInput.addTextChangedListener(textWatcher)
+    }
+
+    private fun validateLoginForm() {
+        val username = usernameInput.text.toString()
+        val password = passwordInput.text.toString()
+
+        // Clear previous errors
+        usernameInput.error = null
+        passwordInput.error = null
+
+        // Validate fields
+        if (username.isEmpty()) {
+            usernameInput.error = "Username is required"
+        }
+
+        if (password.isEmpty()) {
+            passwordInput.error = "Password is required"
+        }
+
+        // Update button state
+        loginButton.isEnabled = ValidationUtils.isLoginFormValid(username, password)
     }
 
     private fun setupPasswordVisibilityToggle() {
