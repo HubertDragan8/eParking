@@ -66,7 +66,10 @@ class LoginActivity : AppCompatActivity() {
             if (authManager.login(username, password)) {
                 handleRememberMe(username, password)
                 Toast.makeText(this, "Login successful", Toast.LENGTH_SHORT).show()
-                startActivity(Intent(this, MainActivity::class.java))
+                val intent = Intent(this, MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                }
+                startActivity(intent)
                 finish()
             } else {
                 Toast.makeText(this, "Invalid username or password", Toast.LENGTH_SHORT).show()
@@ -213,5 +216,9 @@ class LoginActivity : AppCompatActivity() {
         val spec = PBEKeySpec(ENCRYPTION_KEY.toCharArray(), "salt".toByteArray(), 65536, 128)
         val tmp = factory.generateSecret(spec)
         return SecretKeySpec(tmp.encoded, "AES")
+    }
+
+    override fun onBackPressed() {
+        finishAffinity()
     }
 } 
