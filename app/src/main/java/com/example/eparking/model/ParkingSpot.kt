@@ -26,7 +26,7 @@ enum class ParkingStatus {
 data class ParkingSpot(
     val id: String,
     val label: String,
-    val status: ParkingStatus = ParkingStatus.UNKNOWN
+    var status: ParkingStatus = ParkingStatus.UNKNOWN
 ) {
     /**
      * Returns true if the parking spot is available for use.

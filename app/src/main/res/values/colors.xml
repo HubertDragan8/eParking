@@ -7,4 +7,9 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    
+    <!-- Parking spot status colors -->
+    <color name="available_green">#4CAF50</color>
+    <color name="occupied_red">#F44336</color>
+    <color name="unknown_gray">#9E9E9E</color>
 </resources>
